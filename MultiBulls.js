@@ -51,22 +51,19 @@ function MultiBulls() {
 			text = text.substring(0, 4);
 		}
 
-        let state1 = Object.assign({}, state, state, text, state, state, state, state, state);
-        setState(state1);
+        setState({secret, guesses, text, results, errorString, login, username, gameName});
 	}
 
     function updateUsername(ev) {
         let text = ev.target.value;
         
-        let state1 = Object.assign({}, state, state, state, state, state, state, text, state);
-        setState(state1);
+        setState({secret, guesses, guess, results, errorString, login, text, gameName});
     }
 
     function updateGameName(ev) {
         let text = ev.target.value;
         
-        let state1 = Object.assign({}, state, state, state, state, state, state, state, text);
-        setState(state1);
+        setState({secret, guesses, guess, results, errorString, login, username, text});
     }
 
 	// Makes the guess and adds it and its result to the respective
@@ -77,23 +74,17 @@ function MultiBulls() {
             let results = uniq(results.concat(generateResult(guess)));
             let newErrorString = "";
 
-            let state1 = Object.assign({}, state, guesses, state, results, newErrorString, state, state, state);
-            setState(state1);
+            setState({secret, guesses, guess, results, newErrorString, login, username, gameName});
 
 			// setGuesses(guesses.concat(guess));
 			// setResults(results.concat(generateResult(guess)));
 			// setErrorString("");
 		} else {
             let newErrorString = "Must enter 4 unique digits";
-            let state1 = Object.assign({}, state, state, state, state, newErrorString, state, state, state);
-            setState(state1);
-			
-            // setErrorString("Must enter 4 unique digits");
+            setState({secret, guesses, guess, results, newErrorString, login, username, gameName});
 		}
         let newGuess = "";
-        let state1 = Object.assign({}, state, state, newGuess, state, state, state, state, state)
-        setState(state1);
-		// setGuess("");
+        setState({secret, guesses, newGuess, results, errorString, login, username, gameName});
 	}
 
 	// Generates the result string for a given guess in the form 0A1B
@@ -143,15 +134,13 @@ function MultiBulls() {
 
     function usernameKeyPress(ev) {
         if (ev.key === "Enter") {
-            let state1 = Object.assign({}, state, state, state, state, state, state, username, state);
-            setState(state1);
+            setState({secret, guesses, guess, results, errorString, login, username, gameName});
         }
     }
 
     function gameNameKeyPress(ev) {
         if (ev.key === "Enter") {
-            let state1 = Object.assign({}, state, state, state, state, state, state, state, gameName);
-            setState(state1);
+            setState({secret, guesses, guess, results, errorString, login, username, gameName});
         }
     }
 
@@ -192,9 +181,11 @@ function MultiBulls() {
 				<h1 id="win">You Win! Congratulations!</h1>
 				<p>
 					<button onClick={function(){
-                        let state1 = Object.assign({}, generateAnswer(), [], state, [], state, state, state, state);
+                        let newSecret = generateAnswer();
+                        let newGuesses = [];
+                        let newResults = [];
 
-						setState(state1);
+						setState({newSecret, newGuesses, guess, newResults, errorString, login, username, gameName});
 					}}>
 						Reset		
 					</button>
@@ -219,8 +210,11 @@ function MultiBulls() {
 			</p>
 			<p>
 				<button onClick={function(){
-                    let state1 = Object.assign({}, generateAnswer(), [], state, [], state, state, state, state);
-                    setState(state1);
+                    let newSecret = generateAnswer();
+                    let newGuesses = [];
+                    let newResults = [];
+
+                    setState({newSecret, newGuesses, guess, newResults, errorString, login, username, gameName});
                                         }}>
 					Reset
 				</button>
