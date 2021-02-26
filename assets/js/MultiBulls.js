@@ -1,37 +1,28 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
 import { useState, useEffect } from 'react';
 
 // The function for the app
 function MultiBulls() {
 
     const [state, setState] = useState({
-        //secret: generateAnswer(),
-        //guesses: [],
-        //guess: "",
-        //results: [],
-        //errorString: "",
-        //login: true,
-        //username: "",
-        //gameName: "",
+        // guesses, winners, playerswinloss, playersready, setup (bool)
+        // secret: generateAnswer(),
+        // guess: "",
+        // guesses: [],
+        // winners: [],
+        // players: [],
+        // players_ready: [],
+        // setup: true,
+        // gameName: "",
 
-        secret: generateAnswer(),
-        guess: "",
         guesses: [],
         winners: [],
-        players: [],
-        players_ready: [],
+        playerswinloss: new Map(),
+        playersready: [],
         setup: true,
-        gameName: "",
     });
 
-    let {secret, guess, guesses, winners, players, players_ready, setup, gameName} = state;
-
-	// const [secret, setSecret] = useState(generateAnswer());
-	// const [guesses, setGuesses] = useState([]);
-	// const [guess, setGuess] = useState("");
-	// const [results, setResults] = useState([]);
-	// const [errorString, setErrorString] = useState("");
+    let {guesses, winners, playerswinloss, playersready, setup} = state;
 
 	// Generates the secret number that must be guessed and returns it
 	// It is comprised of 4 unique digits
@@ -60,7 +51,7 @@ function MultiBulls() {
 			text = text.substring(0, 4);
 		}
 
-        setState({secret, guess, guesses, winners, players, players_ready, setup, gameName});
+        setState({guesses, winners, playerswinloss, playersready, setup});
 	}
 
 	// Makes the guess and adds it and its result to the respective
@@ -70,16 +61,16 @@ function MultiBulls() {
             let guesses = uniq(guesses.concat(guess));
             // TODO
 
-            setState({secret, guess, guesses, winners, players, players_ready, setup, gameName});
+            setState({guesses, winners, playerswinloss, playersready, setup});
 
 			// setGuesses(guesses.concat(guess));
 			// setResults(results.concat(generateResult(guess)));
 			// setErrorString("");
 		} else {
-            setState({secret, guess, guesses, winners, players, players_ready, setup, gameName});
+            setState({guesses, winners, playerswinloss, playersready, setup});
 		}
         let newGuess = "";
-        setState({secret, newGuess, guesses, winners, players, players_ready, setup, gameName});
+        setState({guesses, winners, playerswinloss, playersready, setup});
 	}
 
 	// Generates the result string for a given guess in the form 0A1B
@@ -127,86 +118,26 @@ function MultiBulls() {
 		}
 	}
 
-    // function usernameKeyPress(ev) {
-    //     if (ev.key === "Enter") {
-    //         setState({secret, guesses, guess, results, errorString, login, username, gameName});
-    //     }
-    // }
-
-    // function gameNameKeyPress(ev) {
-    //     if (ev.key === "Enter") {
-    //         setState({secret, guesses, guess, results, errorString, login, username, gameName});
-    //     }
-    // }
-
 	// Evaluates whether a given guess is valid (i.e. 4 unique digits)
 	function evaluateGuess(currentGuess) {
 		var chars = currentGuess.toString().split('');
 		return !(chars.length !== 4 || chars[0] === chars[1] || chars[0] === chars[2] || chars[0] === chars[3] || chars[1] === chars[2] || chars[1] === chars[3] || chars[2] === chars[3]);
 	}
 
-    // If it is the first time the user is viewing the page, presents a login screen
-    if (setup) {
-        setup = false;
-        return (
-            <div className="App">
-                <h1 id="Login">LOGIN</h1>
-                <p>
-                    <h2 id="Username">Username</h2>
-                    <input type="text"
-                        value={username}
-                        onChange={updateUsername}
-                        onKeyPress={usernameKeyPress} />
-                </p>
-                <p>
-                    <h2 id="GameName">Game Name</h2>
-                    <input type="text"
-                        value={gameName}
-                        onChange={updateGameName}
-                        onKeyPress={gameNameKeyPress} />
-                </p>
-            </div>
-        );
-    }
-
-	// If the user guesses the correct secret number, presents a win screen
-	if (guesses.includes(secret)) {
-		return (
-			<div className="App">
-				<h1 id="win">You Win! Congratulations!</h1>
-				<p>
-					<button onClick={function(){
-                        let newSecret = generateAnswer();
-                        let newGuesses = [];
-
-						setState({newSecret, guess, newGuesses, winners, players, players_ready, setup, gameName});
-					}}>
-						Reset		
-					</button>
-				</p>
-			</div>
-		);
-	}
-
-    function generateTable() {
-        var guessNumber = 1;
-        let rows = [];
-        var i;
+    function generateGuessTable() {
+        let guessNumber = 1;
+        let out = '';
+        let i;
         for (i = 0; i < guesses.length; i++) {
-            rows = rows.concat(
+            out += (
                 <tr>
                     <td>{guessNumber}</td>
                     <td>{guesses[i][0]}</td>
                     <td>{guesses[i][1].toString()}</td>
                     <td>{generateResult(guesses[i][1])}</td>
                 </tr>
-            );
-        }
-
-        var j;
-        let out = "";
-        for (j = 0; j < rows.length; j++) {
-            out += rows[j];
+                );
+            guessNumber++;
         }
 
         return (
@@ -222,10 +153,93 @@ function MultiBulls() {
         );
     }
 
+    function generateWinsTable() {
+        let out = '';
+        let i;
+        for (i = 0; i < playerswinloss.length; i++) {
+            out += (
+                <tr>
+                    <td>{players[i]}</td>
+                    <td>{playerswinloss.get(players[i])[0]}</td>
+                    <td>{playerswinloss.get(players[i])[1]}</td>
+                </tr>
+            );
+        }
+
+        return (
+            <table>
+                <tr>
+                    <th>Players</th>
+                    <th>Wins</th>
+                    <th>Losses</th>
+                </tr>
+                {out}
+            </table>
+        );   
+    }
+
+    function generateCommaList(list) {
+        let i;
+        let out = "";
+        let length = list.length;
+        for (i = 0; i < length; i++) {
+            if (i === length - 1) {
+                out += list[i];
+            }
+            else {
+                out += list[i] + ", ";
+            }
+        }
+
+        return out;
+    }
+
+    // If it is the first time the user is viewing the page, presents a login screen
+    // TODO FIX THIS
+
+    if (setup) {
+        const [username, setUsername] = useState("");
+        const [game, setGame] = useState("");
+        setup = false;
+
+        return (
+            <div className="row">
+                <h1>Login</h1>
+                <div className="column">
+                    <input type="text"
+                        value={username}
+                        onChange={(ev) => setUsername(ev.target.value)} />
+                </div>
+                <div className="column">
+                    <input type="text" 
+                        value={game}
+                        onChange={(ev) => setGame(ev.target.value)} />
+                </div>
+                <div className="column">
+                    <button onClick={() => ch_login(username, game)}>Join</button>
+                </div>
+            </div>
+        );
+    }
+
+    // If there are winners for the current round
+    if (winners.length != 0) {
+        return (
+            <div className="App">
+                <h1>Game Finished</h1>
+                <h2>This Round's Winners: {generateCommaList(winners)}</h2>
+                <p>
+                    {generateWinsTable()}
+                </p>
+            </div>
+        );
+    }
+
 	// Returns the visual format of the game
 	return (
 		<div className="App">
-			<h1>Bulls and Cows! Room: {gameName}</h1>
+			<h1>Bulls and Cows!</h1>
+            <h2>Players Ready: {generateCommaList(playersready)}</h2>
 			<p>
 				<input type="text"
 					value={guess}
@@ -236,17 +250,7 @@ function MultiBulls() {
 				</button>
 			</p>
 			<p>
-				<button onClick={function(){
-                    let newSecret = generateAnswer();
-                    let newGuesses = [];
-
-                    setState({newSecret, guess, newGuesses, winners, players, players_ready, setup, gameName});
-                                        }}>
-					Reset
-				</button>
-			</p>
-			<p>
-				{generateTable()}
+				{generateGuessTable()}
 			</p>
 		</div>
 	);
