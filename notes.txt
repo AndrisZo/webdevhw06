@@ -110,7 +110,7 @@ Calls the user can make to the server:
 - "exitgame"
     - push wins and losses to backup server
     - If 
-    - view(removeplayer(oldgame, name)))
+    - view(removeplayer(oldgame, name))
 - "ping"
     - view(oldgame)
 

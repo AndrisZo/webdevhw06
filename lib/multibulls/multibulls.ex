@@ -47,10 +47,21 @@ defmodule Multibulls.Game do
       currentguesses: %{},
       passed: [],
       winners: [],
+      players: [],
       playerswinloss: %{},
       playersready: [],
       turnumber: 0,
       setup: true
+    }
+  end
+
+  def view(state) do
+    %{
+      guesses: state.guesses,
+      winners: state.winners,
+      playerswinloss: state.playerswinloss,
+      playersready: state.playersready,
+      setup: state.setup
     }
   end
 
@@ -68,13 +79,9 @@ defmodule Multibulls.Game do
 
   # Set the user's current guess to the given guess
   def makeguess(gamestate, name, guess) do
-    if isValidGuess(guess) do
+    if isValidGuess(guess) and Enum.member?(gamestate.players, name) do
       gamestate = Map.put(gamestate, :currentguesses, Map.put(gamestate.currentguesses, name, guess))
       Map.put(gamestate, :passed, List.delete(gamestate.passed, name))
-      # if allplayersguessed(gamestate) do
-        # pushguesses(gamestate)
-      # else do
-        # gamestate
     end
   end
 
@@ -85,7 +92,7 @@ defmodule Multibulls.Game do
 
   # Have all the players either made a guess or passed?
   def allplayersguessed(gamestate) do
-    Enum.sort(Enum.concat(Map.keys(gamestate.currentguesses), gamestate.passed)) == Enum.sort(Map.keys(gamestate.playerswinloss))
+    Enum.sort(Enum.concat(Map.keys(gamestate.currentguesses), gamestate.passed)) == Enum.sort(gamestate.players)
   end
 
   # Push any guesses that have been made to the list of guesses. Anyone that doesn't have a guess there
@@ -95,7 +102,8 @@ defmodule Multibulls.Game do
   # If someone won the game, add them to the winners and reset to setup state.
   def pushguesses(gamestate) do
     newguesses = all_cows_bulls(extractguesses(gamestate.currentguesses), gamestate.secret)
-    state = Map.put(gamestate, :guesses, Enum.concat(gamestate.guesses, newguesses))
+    state = gamestate
+    |> Map.put(:guesses, Enum.concat(gamestate.guesses, newguesses))
     |> Map.put(:currentguesses, %{})
     |> Map.put(:passed, [])
     |> Map.put(:turnnumber, gamestate.turnnumber + 1)
@@ -121,7 +129,7 @@ defmodule Multibulls.Game do
   def updatewinloss(winloss, winlosskeys, winners) do
     cond do
       Enum.empty?(winlosskeys) -> winloss
-      Enum.count(winners, fn x -> x == hd(winlosskeys) end) > 0 ->
+      Enum.member?(winners, hd(winlosskeys)) ->
         updatewinloss(Map.put(winloss, hd(winlosskeys), addwin(winloss[hd(winlosskeys)])), tl(winlosskeys), winners)
       true -> updatewinloss(Map.put(winloss, hd(winlosskeys), addloss(winloss[hd(winlosskeys)])), tl(winlosskeys), winners)
     end
@@ -154,25 +162,39 @@ defmodule Multibulls.Game do
   # Note that the given player has decided to pass this round
   # If they had guessed, remove that guess
   def pass(gamestate, name) do
-    gamestate = Map.put(gamestate, :passed, [name | gamestate.passed])
-    Map.put(gamestate, :currentguesses, Map.drop(gamestate.currentguesses, [name]))
+    # Pass should ensure that you can't be in the passed list twice
+    if Enum.member?(gamestate.players, name) do
+      gamestate = Map.put(gamestate, :passed, [name | gamestate.passed])
+      Map.put(gamestate, :currentguesses, Map.drop(gamestate.currentguesses, [name]))
+    end
   end
+
+
+  # Change a lot
 
   # Add a player into the game. If it's not in setup phase, add them as an observer.
   # If it is in setup phase, let them in as a player.
-  def addplayer(gamestate, name, winloss) do
-    Map.put(gamestate, :playerswinloss, Map.put(gamestate.playerswinloss, name, winloss))
+  def addplayer(gamestate, name) do
+    cond do
+      not gamestate.setup -> gamestate
+      Enum.member?(gamestate.players, name) -> gamestate
+      Enum.member?(Map.keys(gamestate.playerswinloss), name) -> Map.put(gamestate, :players, [name | gamestate.players])
+      true -> gamestate
+        |> Map.put(:playerswinloss, Map.put(gamestate.playerswinloss, name, [0, 0]))
+        |> Map.put(:players, [name | gamestate.players])
+    end
   end
 
   # Remove a player from the game, either as an observer or player. They won't
   # be in the game anymore, so only the record of their guesses will stay.
   # Push the wins and losses they made in this round to the server?
   def removeplayer(gamestate, name) do
-    Map.put(gamestate, :playerswinloss, Map.drop(gamestate.playerswinloss, [name]))
+    gamestate
     |> Map.put(:currentguesses, Map.drop(gamestate.currentguesses, [name]))
     |> Map.put(:playersready, List.delete(gamestate.playersready, name))
     |> Map.put(:winners, List.delete(gamestate.winners, name))
     |> Map.put(:passed, List.delete(gamestate.passed, name))
+    |> Map.put(:players, List.delete(gamestate.players, name))
   end
 
   def getwinloss(gamestate, name) do
@@ -181,17 +203,16 @@ defmodule Multibulls.Game do
 
   # Set the player to ready, indicating that they're ready for the game to start.
   def readyplayer(gamestate, name) do
-    if gamestate.setup do
+    if gamestate.setup and Enum.member?(gamestate.players, name) do
       Map.put(gamestate, :playersready, Enum.dedup([name | gamestate.playersready]))
     else
       gamestate
     end
-
   end
 
   # Set the player to not ready, indicating that they're not ready for the game to start.
   def unreadyplayer(gamestate, name) do
-    if gamestate.setup do
+    if gamestate.setup and Enum.member?(gamestate.players, name) do
       Map.put(gamestate, :playersready, List.delete(gamestate.playersready, name))
     else
       gamestate

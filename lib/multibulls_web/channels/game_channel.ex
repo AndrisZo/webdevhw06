@@ -4,6 +4,7 @@ defmodule MultibullsWeb.GameChannel do
   @impl true
   def join("game:lobby", payload, socket) do
     if authorized?(payload) do
+      #game = Multibulls.Game.new()
       {:ok, socket}
     else
       {:error, %{reason: "unauthorized"}}

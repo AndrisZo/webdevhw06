@@ -16,12 +16,13 @@ defmodule Multibulls.MultibullsTest do
         "player4" => [8, 0, 7, 9]
       },
       passed: ["player2", "player1"],
+      players: ["player1", "player2", "player3", "player4"],
       winners: [],
       playerswinloss: %{
         "player1" => [1, 18],
         "player2" => [4, 7],
         "player3" => [2, 12],
-        "player4" => [5, 10],
+        "player4" => [5, 10]
       },
       playersready: ["player1", "player2", "player3", "player4"],
       turnnumber: 2,
@@ -43,12 +44,13 @@ defmodule Multibulls.MultibullsTest do
         "player4" => [8, 0, 7, 9]
       },
       passed: ["player2", "player1"],
+      players: ["player1", "player2", "player3", "player4"],
       winners: [],
       playerswinloss: %{
         "player1" => [1, 18],
         "player2" => [4, 7],
         "player3" => [2, 12],
-        "player4" => [5, 10],
+        "player4" => [5, 10]
       },
       playersready: ["player1", "player2", "player3", "player4"],
       turnnumber: 2,
@@ -62,12 +64,13 @@ defmodule Multibulls.MultibullsTest do
       secret: [7, 8, 9, 0],
       currentguesses: %{},
       passed: [],
+      players: ["player1", "player2", "player3", "player4"],
       winners: [],
       playerswinloss: %{
         "player1" => [1, 18],
         "player2" => [4, 7],
         "player3" => [2, 12],
-        "player4" => [5, 10],
+        "player4" => [5, 10]
       },
       playersready: ["player1", "player2", "player3"],
       turnnumber: 0,
@@ -89,12 +92,13 @@ defmodule Multibulls.MultibullsTest do
         "player4" => [8, 0, 7, 9]
       },
       passed: ["player1"],
+      players: ["player1", "player2", "player3", "player4"],
       winners: [],
       playerswinloss: %{
         "player1" => [1, 18],
         "player2" => [4, 7],
         "player3" => [2, 12],
-        "player4" => [5, 10],
+        "player4" => [5, 10]
       },
       playersready: ["player1", "player2", "player3", "player4"],
       turnnumber: 2,
@@ -115,12 +119,13 @@ defmodule Multibulls.MultibullsTest do
         "player3" => [7, 8, 9, 0]
       },
       passed: ["player1", "player2"],
+      players: ["player1", "player2", "player3", "player4"],
       winners: [],
       playerswinloss: %{
         "player1" => [1, 18],
         "player2" => [4, 7],
         "player3" => [2, 12],
-        "player4" => [5, 10],
+        "player4" => [5, 10]
       },
       playersready: ["player1", "player2", "player3", "player4"],
       turnnumber: 2,
@@ -134,6 +139,7 @@ defmodule Multibulls.MultibullsTest do
       secret: [3, 4, 5, 6],
       currentguesses: %{"player1" => [5, 6, 7, 8]},
       passed: ["player1"],
+      players: ["player1"],
       winners: ["player1"],
       playerswinloss: %{"player1" => [1, 1]},
       playersready: ["player1"],
@@ -184,6 +190,7 @@ defmodule Multibulls.MultibullsTest do
       secret: [7, 8, 9, 0],
       currentguesses: %{},
       passed: [],
+      players: ["player1", "player2", "player3", "player4"],
       winners: ["player3"],
       playerswinloss: %{
         "player1" => [1, 19],
@@ -209,6 +216,7 @@ defmodule Multibulls.MultibullsTest do
       secret: [7, 8, 9, 0],
       currentguesses: %{},
       passed: [],
+      players: ["player1", "player2", "player3", "player4"],
       winners: [],
       playerswinloss: %{
         "player1" => [1, 18],
@@ -237,7 +245,7 @@ defmodule Multibulls.MultibullsTest do
   end
 
   test "test addplayer" do
-    assert addplayer(getexample(), "player5", [0, 0]).playerswinloss ==
+    assert addplayer(setupex(), "player5").playerswinloss ==
     %{
       "player1" => [1, 18],
       "player2" => [4, 7],
@@ -245,12 +253,37 @@ defmodule Multibulls.MultibullsTest do
       "player4" => [5, 10],
       "player5" => [0, 0]
     }
-    assert addplayer(getexample(), "player5", [0, 0]).playerswinloss
+
+    assert Enum.sort(addplayer(setupex(), "player5").players) == ["player1", "player2", "player3", "player4", "player5"]
+    assert getexample() == addplayer(getexample(), "player10")
+    assert addplayer(setupex(), "player4") == setupex()
+    assert Enum.sort(addplayer(setupex(), "player5").players) == ["player1", "player2", "player3", "player4", "player5"]
+    assert addplayer(setupex(), "player5").playerswinloss == %{
+      "player1" => [1, 18],
+      "player2" => [4, 7],
+      "player3" => [2, 12],
+      "player4" => [5, 10],
+      "player5" => [0, 0]
+    }
+
+    wplayer5 = Map.put(setupex(), :playerswinloss, Map.put(setupex().playerswinloss, "player5", [1, 9]))
+
+    assert addplayer(wplayer5, "player5").playerswinloss == %{
+      "player1" => [1, 18],
+      "player2" => [4, 7],
+      "player3" => [2, 12],
+      "player4" => [5, 10],
+      "player5" => [1, 9]
+    }
+
+    assert Enum.sort(addplayer(wplayer5, "player5").players) == ["player1", "player2", "player3", "player4", "player5"]
   end
 
   test "removeplayer" do
-    assert removeplayer(playeroneeverywhere(), "player1") ==
-    Map.put(Map.put(new(), :guesses, ["player1", [1, 2, 3, 4], 0, 0]), :secret, [3, 4, 5, 6])
+    assert  Map.put(new(), :guesses, ["player1", [1, 2, 3, 4], 0, 0])
+            |> Map.put(:secret, [3, 4, 5, 6])
+            |> Map.put(:playerswinloss, %{"player1" => [1,1]}) ==
+              removeplayer(playeroneeverywhere(), "player1")
   end
 
   test "getwinloss" do
