@@ -1,0 +1,118 @@
+React side:
+- Login screen with game name and user name fields
+- Setup screen before the game
+    - User can select observer or player
+    - Players can toggle if they're ready
+    - Displays win loss count of each user
+    - If a game was just played, displays who won and who lost
+    - Could display players in game and players that are ready, optional
+- Game play screen
+    - Guesses are displayed with the username of the person that guessed it
+    - User can make guesses as much as they want, guesses will be accepted by the server
+      once everyone has made a guess
+    - Response will give new list of guesses to display
+    - Redirect to Setup screen when there's winners
+
+Elixir side code:
+- 
+
+
+
+
+
+- Elixir side state:
+BackupAgent state:
+    {
+        users: {
+            username: [win, loss],
+            username: [win, loss],
+            username: [win, loss],
+            username: [win, loss]
+        }
+
+        games: {
+            {
+                gamelobby : gamestate, 
+                gamelobby : gamestate,
+                gamelobby : gamestate,
+                gamelobby : gamestate
+            }
+        }
+    }
+
+Channel side gamestate: 
+{
+    guesses: [
+        [Username, [1, 2, 3, 4], bulls, cows], 
+        [Username, [1, 2, 3, 4], bulls, cows], 
+        [Username, [1, 2, 3, 4], bulls, cows], 
+        [Username, [1, 2, 3, 4], bulls, cows]
+    ],
+    secret: [1, 2, 3, 4],
+    currentguesses: {
+        username : [currentguess], 
+        username : [currentguess],
+        username : [currentguess],
+        username : [currentguess]
+    }
+    winners: [Username, Username],
+    playerswinloss: {
+        Username : [win, loss], 
+        Username : [win, loss], 
+    }
+    players-ready: [Username, Username]
+    turnnumber: integer
+    setup: boolean
+}
+
+View of the game that's given to the browser side (state in our react code):
+{
+    guesses: [
+        [Username, [1, 2, 3, 4], bulls, cows], 
+        [Username, [1, 2, 3, 4], bulls, cows], 
+        [Username, [1, 2, 3, 4], bulls, cows], 
+        [Username, [1, 2, 3, 4], bulls, cows]
+    ],
+    winners: [Username, Username],
+    players: [Username, Username, Username],
+    players-ready: [Username, Username],
+    setup: boolean
+}
+
+State stored in the socket:
+:name: The name of the lobby that the user is in
+:username: The name of the user
+
+Calls the user can make to the server:
+- "join"
+    - Check for an ongoing game on the backup server
+        - If there's an ongoing game, use it
+        - If there's not, make a new one
+    - view(addplayer(oldgame, name, namewinloss))
+- "makeguess"
+    - view(makeguess(oldgame, name, guess))
+- "pass"
+    - view(pass(oldgame, name))
+- "ready-up"
+    - readygame = readyup(game, name)
+    - if everyone is ready:
+        - view(startgame(game))
+    - else 
+        -view(game)
+    - view(readyup(oldgame, name))
+- "ready-down"
+    - view(readydown(oldgame, name))
+- "becomeplayer"
+    - view(addplayer(oldgame, name, namewinloss))
+- "becomeobserver"
+    - push wins and losses to backup server
+    - view(removeplayer(oldgame, name))
+- "exitgame"
+    - push wins and losses to backup server
+    - If 
+    - view(removeplayer(oldgame, name)))
+- "ping"
+    - view(oldgame)
+
+
+ Process.send_after(self(), {:checkturn, turnnumberhere}, 5_000)
