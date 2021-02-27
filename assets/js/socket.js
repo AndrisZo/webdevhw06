@@ -89,36 +89,60 @@ export function channel_makeguess(guess, username) {
     console.log("Unable to login", resp)});
 }
 
-// Called to ready a player
-export function channel_ready(username) {
-  channel.push("readyplayer", {gamestate: state, name: username})
-    .receive("ok", state_update)
-    .receive("error", resp => { console.log("Unable to login", resp) });
-}
-
 // Called to add a player to a game
 export function channel_join(lobbyname, username) {
   let channel = socket.channel("multibulls:" + lobbyname, {});
   channel.join()
-  .receive("ok", resp => { console.log("Joined successfully", resp) })
-  .receive("error", resp => { console.log("Unable to join", resp) });
+    .receive("ok", resp => { console.log("Joined successfully", resp) })
+    .receive("error", resp => { console.log("Unable to join", resp) });
 
-  channel.push("addplayer", {gamestate: state, name: username})
-  .receive("ok", state_update)
-  .receive("error", resp => { console.log("Unable to login", resp) });
+  channel.push("login", {name: username})
+    .receive("ok", state_update)
+    .receive("error", resp => { console.log("Unable to login", resp) });
+
+  channel.push("addplayer", {})
+    .receive("ok", state_update)
+    .receive("error", resp => { console.log("Unable to login", resp) });
 }
 
 // Called to add an observer to a game
 export function channel_observer_join(lobbyname, username) {
   let channel = socket.channel("multibulls:" + lobbyname, {});
   channel.join()
-  .receive("ok", resp => { console.log("Joined successfully", resp) })
-  .receive("error", resp => { console.log("Unable to join", resp) });
+    .receive("ok", resp => { console.log("Joined successfully", resp) })
+    .receive("error", resp => { console.log("Unable to join", resp) });
+
+  channel.push("login", {name: username})
+    .receive("ok", state_update)
+    .receive("error", resp => { console.log("Unable to login", resp) });
 
   channel.push("removeplayer", {gamestate: state, name: username})
+    .receive("ok", state_update)
+    .receive("error", resp => { console.log("Unable to login", resp) });
+}
+
+// Called to let a player pass on a turn
+export function channel_pass() {
+  channel.push("pass", {})
   .receive("ok", state_update)
   .receive("error", resp => { console.log("Unable to login", resp) });
 }
+
+// Called to ready up a player for a turn
+export function channel_readyup() {
+  channel.push("readyup", {})
+    .receive("ok", state_update)
+    .receive("error", resp => { console.log("Unable to login", resp) });
+}
+
+// Called to say a person's not ready for a turn
+export function channel_readydown() {
+  channel.push("readydown", {})
+    .receive("ok", state_update)
+    .receive("error", resp => { console.log("Unable to login", resp) });
+}
+
+channel.on("view", state_update);
 
 // Now that you are connected, you can join channels with a topic:
 export default socket

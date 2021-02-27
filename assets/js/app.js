@@ -13,3 +13,11 @@ import "../css/app.scss"
 //     import socket from "./socket"
 //
 import "phoenix_html"
+import "./MultiBulls"
+
+ReactDOM.render(
+    <React.StrictMode>
+      <MultiBulls />
+    </React.StrictMode>,
+    document.getElementById('root')
+);

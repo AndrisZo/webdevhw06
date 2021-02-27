@@ -1,7 +1,7 @@
 import "../css/app.scss"; // CSS
 import React, { Component } from 'react';
 import { useState, useEffect } from 'react';
-import { channel_join, channel_makeguess, channel_stateupdate, channel_observer_join, channel_ready } from './socket.js';
+import { channel_join, channel_makeguess, channel_stateupdate, channel_observer_join, channel_readyup, channel_readydown } from './socket.js';
 import { generateCommaList, generateWinsTable, generateGuessTable, generateResult } from './helpers.js';
 
 // Login Screen
@@ -85,7 +85,7 @@ function ReadyScreen() {
                 <h2 id="PlayersReadyList">{generateCommaList(playersready)}</h2>
             </p>
             <p>
-                <button onClick={() => channel_ready(username)}>Ready Up</button>
+                <button onClick={() => channel_readyup(username)}>Ready Up</button>
             </p>
         </div>
     );
@@ -128,4 +128,4 @@ function MultiBulls() {
     }
 }
 
-export default App;
+export default MultiBulls;
