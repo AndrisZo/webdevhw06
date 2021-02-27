@@ -50,7 +50,7 @@ defmodule Multibulls.Game do
       players: [],
       playerswinloss: %{},
       playersready: [],
-      turnumber: 0,
+      turnnumber: 0,
       setup: true
     }
   end
@@ -59,11 +59,16 @@ defmodule Multibulls.Game do
     %{
       guesses: state.guesses,
       winners: state.winners,
-      playerswinloss: state.playerswinloss,
+      playerswinloss: reformat(state.playerswinloss),
       playersready: state.playersready,
+      players: state.players,
       setup: state.setup,
       username: username
     }
+  end
+
+  def reformat(winloss) do
+    Enum.map(Map.keys(winloss), fn x -> [x, Enum.at(winloss[x], 0), Enum.at(winloss[x], 1)] end)
   end
 
   def startnewgame(game) do
@@ -83,6 +88,8 @@ defmodule Multibulls.Game do
     if isValidGuess(guess) and Enum.member?(gamestate.players, name) do
       gamestate = Map.put(gamestate, :currentguesses, Map.put(gamestate.currentguesses, name, guess))
       Map.put(gamestate, :passed, List.delete(gamestate.passed, name))
+    else
+      gamestate
     end
   end
 
@@ -165,8 +172,16 @@ defmodule Multibulls.Game do
   def pass(gamestate, name) do
     # Pass should ensure that you can't be in the passed list twice
     if Enum.member?(gamestate.players, name) do
-      gamestate = Map.put(gamestate, :passed, [name | gamestate.passed])
-      Map.put(gamestate, :currentguesses, Map.drop(gamestate.currentguesses, [name]))
+      state = gamestate
+      |> Map.put(:passed, [name | gamestate.passed])
+      |> Map.put(:currentguesses, Map.drop(gamestate.currentguesses, [name]))
+      if allplayersguessed(state) do
+        pushguesses(state)
+      else
+        state
+      end
+    else
+      gamestate
     end
   end
 
@@ -205,10 +220,19 @@ defmodule Multibulls.Game do
   # Set the player to ready, indicating that they're ready for the game to start.
   def readyplayer(gamestate, name) do
     if gamestate.setup and Enum.member?(gamestate.players, name) do
-      Map.put(gamestate, :playersready, Enum.dedup([name | gamestate.playersready]))
+      newstate = Map.put(gamestate, :playersready, Enum.dedup([name | gamestate.playersready]))
+      if allready(newstate) do
+        startnewgame(newstate)
+      else
+        newstate
+      end
     else
       gamestate
     end
+  end
+
+  def allready(state) do
+    Enum.sort(state.players) == Enum.sort(state.playersready)
   end
 
   # Set the player to not ready, indicating that they're not ready for the game to start.

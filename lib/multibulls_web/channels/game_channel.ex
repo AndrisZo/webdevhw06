@@ -7,8 +7,10 @@ defmodule MultibullsWeb.GameChannel do
   @impl true
   def join("game:" <> lobbyname, payload, socket) do
     if authorized?(payload) do
+      GameServer.start(lobbyname)
       socket = assign(socket, :gamename, lobbyname)
-      {:ok, socket}
+      game = GameServer.peek(lobbyname)
+      {:ok, Game.view(game, ""), socket}
     else
       {:error, %{reason: "unauthorized"}}
     end
@@ -29,15 +31,17 @@ defmodule MultibullsWeb.GameChannel do
 
   @impl true
   def handle_in("login", %{"name" => username}, socket) do
-    socket = assign(socket, :user, username)
-    currgame = GameServer.peek(socket.assign[:gamename])
+    socket = assign(socket, :username, username)
+    currgame = GameServer.peek(socket.assigns[:gamename])
     {:reply, {:ok, Game.view(currgame, username)}, socket}
   end
 
   @impl true
   def handle_in("makeguess", %{"guess" => guess}, socket) do
-    username = socket.assign[:username]
-    game = GameServer.guess(socket.assign[:gamename], username, guess)
+    IO.inspect("The user's name is")
+    IO.inspect(socket.assigns[:username])
+    username = socket.assigns[:username]
+    game = GameServer.guess(socket.assigns[:gamename], username, guess)
     view = Game.view(game, username)
     broadcast(socket, "view", view)
     {:reply, {:ok, view}, socket}
@@ -45,8 +49,8 @@ defmodule MultibullsWeb.GameChannel do
 
   @impl true
   def handle_in("pass", %{}, socket) do
-    username = socket.assign[:username]
-    game = GameServer.pass(socket.assign[:gamename], username)
+    username = socket.assigns[:username]
+    game = GameServer.pass(socket.assigns[:gamename], username)
     view = Game.view(game, username)
     broadcast(socket, "view", view)
     {:reply, {:ok, view}, socket}
@@ -54,8 +58,8 @@ defmodule MultibullsWeb.GameChannel do
 
   @impl true
   def handle_in("readyup", %{}, socket) do
-    username = socket.assign[:username]
-    game = GameServer.readyup(socket.assign[:gamename], username)
+    username = socket.assigns[:username]
+    game = GameServer.readyup(socket.assigns[:gamename], username)
     view = Game.view(game, username)
     broadcast(socket, "view", view)
     {:reply, {:ok, view}, socket}
@@ -63,8 +67,8 @@ defmodule MultibullsWeb.GameChannel do
 
   @impl true
   def handle_in("readydown", %{}, socket) do
-    username = socket.assign[:username]
-    game = GameServer.readydown(socket.assign[:gamename], username)
+    username = socket.assigns[:username]
+    game = GameServer.readydown(socket.assigns[:gamename], username)
     view = Game.view(game, username)
     broadcast(socket, "view", view)
     {:reply, {:ok, view}, socket}
@@ -72,8 +76,8 @@ defmodule MultibullsWeb.GameChannel do
 
   @impl true
   def handle_in("addplayer", %{}, socket) do
-    username = socket.assign[:username]
-    game = GameServer.addplayer(socket.assign[:gamename], username)
+    username = socket.assigns[:username]
+    game = GameServer.addplayer(socket.assigns[:gamename], username)
     view = Game.view(game, username)
     broadcast(socket, "view", view)
     {:reply, {:ok, view}, socket}
@@ -81,8 +85,8 @@ defmodule MultibullsWeb.GameChannel do
 
   @impl true
   def handle_in("removeplayer", %{}, socket) do
-    username = socket.assign[:username]
-    game = GameServer.removeplayer(socket.assign[:gamename], username)
+    username = socket.assigns[:username]
+    game = GameServer.removeplayer(socket.assigns[:gamename], username)
     view = Game.view(game, username)
     broadcast(socket, "view", view)
     {:reply, {:ok, view}, socket}

@@ -65,6 +65,8 @@ let state = {
 
 let callback = null;
 
+let channel = null;
+
 // The server sent us a new state
 // From Nat's scratch repo https://github.com/NatTuck/scratch-2021-01/blob/master/4550/0216/hangman/assets/js/socket.js
 function state_update(st) {
@@ -83,7 +85,7 @@ export function channel_stateupdate(cb) {
 
 // Called to make a guess
 export function channel_makeguess(guess, username) {
-  channel.push("makeguess", {gamestate: state, name: username, guess: guess})
+  channel.push("makeguess", {name: username, guess: guess})
     .receive("ok", state_update)
     .receive("error", resp => {
     console.log("Unable to login", resp)});
@@ -91,7 +93,9 @@ export function channel_makeguess(guess, username) {
 
 // Called to add a player to a game
 export function channel_join(lobbyname, username) {
-  let channel = socket.channel("multibulls:" + lobbyname, {});
+  socket.connect();
+  let channelname = "game:" + lobbyname;
+  channel = socket.channel(channelname, {});
   channel.join()
     .receive("ok", resp => { console.log("Joined successfully", resp) })
     .receive("error", resp => { console.log("Unable to join", resp) });
@@ -103,11 +107,19 @@ export function channel_join(lobbyname, username) {
   channel.push("addplayer", {})
     .receive("ok", state_update)
     .receive("error", resp => { console.log("Unable to login", resp) });
+
+    channel.on("view", state_update);
+}
+
+export function channel_leave() {
+  window.location.reload(false);
+  socket.disconnect();
 }
 
 // Called to add an observer to a game
 export function channel_observer_join(lobbyname, username) {
-  let channel = socket.channel("multibulls:" + lobbyname, {});
+  socket.connect();
+  channel = socket.channel("game:" + lobbyname, {});
   channel.join()
     .receive("ok", resp => { console.log("Joined successfully", resp) })
     .receive("error", resp => { console.log("Unable to join", resp) });
@@ -119,6 +131,8 @@ export function channel_observer_join(lobbyname, username) {
   channel.push("removeplayer", {gamestate: state, name: username})
     .receive("ok", state_update)
     .receive("error", resp => { console.log("Unable to login", resp) });
+
+    channel.on("view", state_update);
 }
 
 // Called to let a player pass on a turn
@@ -126,6 +140,15 @@ export function channel_pass() {
   channel.push("pass", {})
   .receive("ok", state_update)
   .receive("error", resp => { console.log("Unable to login", resp) });
+}
+
+// General ready function
+export function channel_ready() {
+  if (state.playersready.includes(state.username)) {
+    channel_readydown();
+  } else {
+    channel_readyup();
+  }
 }
 
 // Called to ready up a player for a turn
@@ -142,7 +165,17 @@ export function channel_readydown() {
     .receive("error", resp => { console.log("Unable to login", resp) });
 }
 
-channel.on("view", state_update);
+export function channel_toobserver(username) {
+  channel.push("removeplayer", {gamestate: state, name: username})
+  .receive("ok", state_update)
+  .receive("error", resp => { console.log("Unable to login", resp) });
+}
+
+export function channel_toplayer(username) {
+  channel.push("addplayer", {gamestate: state, name: username})
+  .receive("ok", state_update)
+  .receive("error", resp => { console.log("Unable to login", resp) });
+}
 
 // Now that you are connected, you can join channels with a topic:
 export default socket

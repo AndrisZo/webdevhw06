@@ -12,9 +12,11 @@ defmodule Multibulls.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: Multibulls.PubSub},
       # Start the Endpoint (http/https)
-      MultibullsWeb.Endpoint
+      MultibullsWeb.Endpoint,
       # Start a worker by calling: Multibulls.Worker.start_link(arg)
       # {Multibulls.Worker, arg}
+      Multibulls.BackupAgent,
+      Multibulls.GameSup
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

@@ -13,7 +13,9 @@ import "../css/app.scss"
 //     import socket from "./socket"
 //
 import "phoenix_html"
-import "./MultiBulls"
+import MultiBulls from "./MultiBulls"
+import ReactDOM from 'react-dom'
+import React from 'react'
 
 ReactDOM.render(
     <React.StrictMode>
