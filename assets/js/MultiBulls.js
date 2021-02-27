@@ -1,259 +1,131 @@
+import "../css/app.scss"; // CSS
 import React, { Component } from 'react';
 import { useState, useEffect } from 'react';
+import { channel_join, channel_makeguess, channel_stateupdate, channel_observer_join, channel_ready } from './socket.js';
+import { generateCommaList, generateWinsTable, generateGuessTable, generateResult } from './helpers.js';
+
+// Login Screen
+function Login() {
+    const [game, setGame] = useState("");
+
+    return (
+        <div className="row">
+            <h1>Login</h1>
+            <div className="column">
+                <input type="text"
+                    value={username}
+                    onChange={(ev) => {username = ev.target.value}} />
+            </div>
+            <div className="column">
+                <input type="text" 
+                    value={game}
+                    onChange={(ev) => setGame(ev.target.value)} />
+            </div>
+            <h2>Join As:</h2>
+            <div className="column">
+                <button onClick={() => channel_join(game, username)}>Player</button>
+                <button onClick={() => channel_observer_join(game, username)}>Observer</button>
+            </div>
+        </div>
+    );
+}
+
+// Win Screen
+function WinScreen(currentWinners, winTable) {
+    return (
+        <div className="App">
+            <h1>Game Finished</h1>
+            <p id="WinScreenReadyLine">
+                <h2>Ready for next round?</h2>
+                <button onClick={() => channel_ready(username)}>Ready Up</button>
+            </p>
+            <h2>This Round's Winners: {winners}</h2>
+            <p>
+                {winTable}
+            </p>
+        </div>
+    );
+}
 
 // The function for the app
-function MultiBulls() {
+function Play({state}) {
+    let {guesses, winners, playerswinloss, playersready, setup, username} = state;
+    let guess = "";
 
-    const [state, setState] = useState({
-        // guesses, winners, playerswinloss, playersready, setup (bool)
-        // secret: generateAnswer(),
-        // guess: "",
-        // guesses: [],
-        // winners: [],
-        // players: [],
-        // players_ready: [],
-        // setup: true,
-        // gameName: "",
-
-        guesses: [],
-        winners: [],
-        playerswinloss: new Map(),
-        playersready: [],
-        setup: true,
-    });
-
-    let {guesses, winners, playerswinloss, playersready, setup} = state;
-
-	// Generates the secret number that must be guessed and returns it
-	// It is comprised of 4 unique digits
-	function generateAnswer() {
-		let digit1 = Math.floor(Math.random() * 9 + 1)
-		let digit2 = digit1;
-		while (digit2 === digit1) {
-			digit2 = Math.floor(Math.random() * 10);
-		}
-		let digit3 = digit2;
-		while (digit3 === digit2 || digit3 === digit1) {
-			digit3 = Math.floor(Math.random() * 10);
-		}
-		let digit4 = digit3;
-		while (digit4 === digit3 || digit4 === digit2 || digit4 === digit1) {
-			digit4 = Math.floor(Math.random() * 10);
-		}
-		let out = (digit1 + (10 * digit2) + (100 * digit3) + (1000 * digit4));
-		return out.toString();
+	// Makes the guess and adds it and its result to the respective arrays
+	function makeGuess(guess) {
+        channel_makeguess(guess, username);
 	}
-
-	// Updates the guess field
-	function updateGuess(ev) {
-		let text = ev.target.value;
-		if (text.length > 4) {
-			text = text.substring(0, 4);
-		}
-
-        setState({guesses, winners, playerswinloss, playersready, setup});
-	}
-
-	// Makes the guess and adds it and its result to the respective
-	// arrays
-	function makeGuess() {
-		if (evaluateGuess(guess)) {
-            let guesses = uniq(guesses.concat(guess));
-            // TODO
-
-            setState({guesses, winners, playerswinloss, playersready, setup});
-
-			// setGuesses(guesses.concat(guess));
-			// setResults(results.concat(generateResult(guess)));
-			// setErrorString("");
-		} else {
-            setState({guesses, winners, playerswinloss, playersready, setup});
-		}
-        let newGuess = "";
-        setState({guesses, winners, playerswinloss, playersready, setup});
-	}
-
-	// Generates the result string for a given guess in the form 0A1B
-	// and returns it
-	function generateResult(currentGuess) {
-		let secretDigits = secret.toString().split('');
-		let guessDigits = currentGuess.toString().split('');
-		let correctPlaceCount = 0;
-		let correctNumberCount = 0;
-
-		var i;
-		for (i = 0; i < secretDigits.length; i++) {
-			if (secretDigits[i] === guessDigits[i]) {
-				correctPlaceCount++;
-			}
-		}
-		if (guessDigits[0] === secretDigits[1] ||
-		guessDigits[0] === secretDigits[2] ||
-		guessDigits[0] === secretDigits[3]) {
-			correctNumberCount++;
-		}
-		if (guessDigits[1] === secretDigits[0] ||
-		guessDigits[1] === secretDigits[2] ||
-		guessDigits[1] === secretDigits[3]) {
-			correctNumberCount++;
-		}
-		if (guessDigits[2] === secretDigits[0] ||
-		guessDigits[2] === secretDigits[1] ||
-		guessDigits[2] === secretDigits[3]) {
-			correctNumberCount++;
-		}
-		if (guessDigits[3] === secretDigits[0] ||
-		guessDigits[3] === secretDigits[1] ||
-		guessDigits[3] === secretDigits[2]) {
-			correctNumberCount++;
-		}
-
-		return correctPlaceCount + "A" + correctNumberCount + "B";
-	}
-
-	// Handles if enter is pressed, it calls the makeGuess function
-	function keyPress(ev) {
-		if (ev.key === "Enter") {
-			makeGuess();
-		}
-	}
-
-	// Evaluates whether a given guess is valid (i.e. 4 unique digits)
-	function evaluateGuess(currentGuess) {
-		var chars = currentGuess.toString().split('');
-		return !(chars.length !== 4 || chars[0] === chars[1] || chars[0] === chars[2] || chars[0] === chars[3] || chars[1] === chars[2] || chars[1] === chars[3] || chars[2] === chars[3]);
-	}
-
-    function generateGuessTable() {
-        let guessNumber = 1;
-        let out = '';
-        let i;
-        for (i = 0; i < guesses.length; i++) {
-            out += (
-                <tr>
-                    <td>{guessNumber}</td>
-                    <td>{guesses[i][0]}</td>
-                    <td>{guesses[i][1].toString()}</td>
-                    <td>{generateResult(guesses[i][1])}</td>
-                </tr>
-                );
-            guessNumber++;
-        }
-
-        return (
-        <table>
-            <tr>
-                <th>#</th>
-                <th>User</th>
-                <th>Guess</th>
-                <th>Result</th>
-            </tr>
-            {out}
-        </table>
-        );
-    }
-
-    function generateWinsTable() {
-        let out = '';
-        let i;
-        for (i = 0; i < playerswinloss.length; i++) {
-            out += (
-                <tr>
-                    <td>{players[i]}</td>
-                    <td>{playerswinloss.get(players[i])[0]}</td>
-                    <td>{playerswinloss.get(players[i])[1]}</td>
-                </tr>
-            );
-        }
-
-        return (
-            <table>
-                <tr>
-                    <th>Players</th>
-                    <th>Wins</th>
-                    <th>Losses</th>
-                </tr>
-                {out}
-            </table>
-        );   
-    }
-
-    function generateCommaList(list) {
-        let i;
-        let out = "";
-        let length = list.length;
-        for (i = 0; i < length; i++) {
-            if (i === length - 1) {
-                out += list[i];
-            }
-            else {
-                out += list[i] + ", ";
-            }
-        }
-
-        return out;
-    }
-
-    // If it is the first time the user is viewing the page, presents a login screen
-    // TODO FIX THIS
-
-    if (setup) {
-        const [username, setUsername] = useState("");
-        const [game, setGame] = useState("");
-        setup = false;
-
-        return (
-            <div className="row">
-                <h1>Login</h1>
-                <div className="column">
-                    <input type="text"
-                        value={username}
-                        onChange={(ev) => setUsername(ev.target.value)} />
-                </div>
-                <div className="column">
-                    <input type="text" 
-                        value={game}
-                        onChange={(ev) => setGame(ev.target.value)} />
-                </div>
-                <div className="column">
-                    <button onClick={() => ch_login(username, game)}>Join</button>
-                </div>
-            </div>
-        );
-    }
-
-    // If there are winners for the current round
-    if (winners.length != 0) {
-        return (
-            <div className="App">
-                <h1>Game Finished</h1>
-                <h2>This Round's Winners: {generateCommaList(winners)}</h2>
-                <p>
-                    {generateWinsTable()}
-                </p>
-            </div>
-        );
-    }
 
 	// Returns the visual format of the game
 	return (
 		<div className="App">
 			<h1>Bulls and Cows!</h1>
-            <h2>Players Ready: {generateCommaList(playersready)}</h2>
 			<p>
 				<input type="text"
 					value={guess}
-					onChange={updateGuess}
-					onKeyPress={keyPress} />
-				<button onClick={makeGuess}>
-					Guess
-				</button>
+					onChange={(ev) => {guess = ev.target.value}}/>
+				<button onClick={() => makeGuess(guess)}>Guess</button>
 			</p>
 			<p>
-				{generateGuessTable()}
+				{generateGuessTable(guesses)}
 			</p>
 		</div>
 	);
+}
+
+// The function for the ready screen
+function ReadyScreen() {
+    return (
+        <div className="App">
+            <h1>Bulls and Cows!</h1>
+            <h2>Logged in as: {username}</h2>
+            <p>
+                <h2>Players Ready: </h2>
+                <h2 id="PlayersReadyList">{generateCommaList(playersready)}</h2>
+            </p>
+            <p>
+                <button onClick={() => channel_ready(username)}>Ready Up</button>
+            </p>
+        </div>
+    );
+}
+
+// The rendering function containing the state
+function MultiBulls() {
+    const [state, setState] = useState({
+        guesses: [],
+        winners: [],
+        playerswinloss: new Map(),
+        playersready: [],
+        setup: true,
+        username: "",
+    });
+
+    console.log("render state", state);
+
+    useEffect(() => {
+        channel_stateupdate(setState);
+    });
+
+    if (setup && playersready.length === playerswinloss.size) {
+        setup = false;
+    }
+
+    if (setup) {
+        if (username === "") {
+            return <Login />
+        } 
+        else {
+            return <ReadyScreen />
+        }
+    }
+    else if (winners.length != 0) {
+        return <WinScreen currentWinners={generateCommaList(winners)} winTable={generateWinsTable(playerswinloss)} />
+    }
+    else {
+        return <Play state={state} />;
+    }
 }
 
 export default App;

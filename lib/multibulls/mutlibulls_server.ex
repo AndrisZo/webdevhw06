@@ -1,4 +1,4 @@
-defmodule Hangman.GameServer do
+defmodule Multibulls.GameServer do
   use GenServer
 
   alias Multibulls.BackupAgent
@@ -29,12 +29,32 @@ defmodule Hangman.GameServer do
     )
   end
 
-  def guess(name, letter) do
-    GenServer.call(reg(name), {:guess, name, letter})
+  def guess(gamename, username, guessarray) do
+    GenServer.call(reg(gamename), {:guess, gamename, username, guessarray})
   end
 
-  def peek(name) do
-    GenServer.call(reg(name), {:peek, name})
+  def peek(gamename) do
+    GenServer.call(reg(gamename), {:peek, gamename})
+  end
+
+  def pass(gamename, playername) do
+    GenServer.call(reg(gamename), {:pass, gamename, playername})
+  end
+
+  def readyup(gamename, playername) do
+    GenServer.call(reg(gamename), {:readyup, gamename, playername})
+  end
+
+  def readydown(gamename, playername) do
+    GenServer.call(reg(gamename), {:readydown, gamename, playername})
+  end
+
+  def addplayer(gamename, playername) do
+    GenServer.call(reg(gamename), {:addplayer, gamename, playername})
+  end
+
+  def removeplayer(gamename, playername) do
+    GenServer.call(reg(gamename), {:removeplayer, gamename, playername})
   end
 
   # implementation
@@ -43,10 +63,46 @@ defmodule Hangman.GameServer do
     {:ok, game}
   end
 
-  def handle_call({:guess, name, letter}, _from, game) do
-    game = Game.guess(game, letter)
-    BackupAgent.put(name, game)
+  def handle_call({:pass, gamename, username}, _from, game) do
+    game = Game.pass(game, username)
+    BackupAgent.put(gamename, game)
     {:reply, game, game}
+  end
+
+  def handle_call({:readyup, gamename, playername}, _from, game) do
+    game = Game.readyplayer(game, playername)
+    BackupAgent.put(gamename, game)
+    {:reply, game, game}
+  end
+
+  def handle_call({:readydown, gamename, playername}, _from, game) do
+    game = Game.unreadyplayer(game, playername)
+    BackupAgent.put(gamename, game)
+    {:reply, game, game}
+  end
+
+  def handle_call({:addplayer, gamename, playername}, _from, game) do
+    game = Game.addplayer(game, playername)
+    BackupAgent.put(gamename, game)
+    {:reply, game, game}
+  end
+
+  def handle_call({:removeplayer, gamename, playername}, _from, game) do
+    game = Game.removeplayer(game, playername)
+    BackupAgent.put(gamename, game)
+    {:reply, game, game}
+  end
+
+  def handle_call({:guess, gamename, username, guessarray}, _from, game) do
+    game = Game.makeguess(game, username, guessarray)
+    if Game.allplayersguessed(game) do
+      game = Game.pushguesses(game)
+      BackupAgent.put(gamename, game)
+      {:reply, game, game}
+    else
+      BackupAgent.put(gamename, game)
+      {:reply, game, game}
+    end
   end
 
   def handle_call({:peek, _name}, _from, game) do

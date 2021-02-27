@@ -54,10 +54,71 @@ let socket = new Socket("/socket", {params: {token: window.userToken}})
 // Finally, connect to the socket:
 socket.connect()
 
-// Now that you are connected, you can join channels with a topic:
-let channel = socket.channel("topic:subtopic", {})
-channel.join()
-  .receive("ok", resp => { console.log("Joined successfully", resp) })
-  .receive("error", resp => { console.log("Unable to join", resp) })
+let state = {
+  guesses: [],
+  winners: [],
+  playerswinloss: new Map(),
+  playersready: [],
+  setup: true,
+  username: "",
+};
 
+let callback = null;
+
+// The server sent us a new state
+// From Nat's scratch repo https://github.com/NatTuck/scratch-2021-01/blob/master/4550/0216/hangman/assets/js/socket.js
+function state_update(st) {
+  console.log("New state", st);
+  state = st;
+  if (callback) {
+    callback(st);
+  }
+}
+
+// Called to update the callback to the "setState" method from the main js file
+export function channel_stateupdate(cb) {
+  callback = cb;
+  callback(state);
+}
+
+// Called to make a guess
+export function channel_makeguess(guess, username) {
+  channel.push("makeguess", {gamestate: state, name: username, guess: guess})
+    .receive("ok", state_update)
+    .receive("error", resp => {
+    console.log("Unable to login", resp)});
+}
+
+// Called to ready a player
+export function channel_ready(username) {
+  channel.push("readyplayer", {gamestate: state, name: username})
+    .receive("ok", state_update)
+    .receive("error", resp => { console.log("Unable to login", resp) });
+}
+
+// Called to add a player to a game
+export function channel_join(lobbyname, username) {
+  let channel = socket.channel("multibulls:" + lobbyname, {});
+  channel.join()
+  .receive("ok", resp => { console.log("Joined successfully", resp) })
+  .receive("error", resp => { console.log("Unable to join", resp) });
+
+  channel.push("addplayer", {gamestate: state, name: username})
+  .receive("ok", state_update)
+  .receive("error", resp => { console.log("Unable to login", resp) });
+}
+
+// Called to add an observer to a game
+export function channel_observer_join(lobbyname, username) {
+  let channel = socket.channel("multibulls:" + lobbyname, {});
+  channel.join()
+  .receive("ok", resp => { console.log("Joined successfully", resp) })
+  .receive("error", resp => { console.log("Unable to join", resp) });
+
+  channel.push("removeplayer", {gamestate: state, name: username})
+  .receive("ok", state_update)
+  .receive("error", resp => { console.log("Unable to login", resp) });
+}
+
+// Now that you are connected, you can join channels with a topic:
 export default socket

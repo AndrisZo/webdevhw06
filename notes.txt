@@ -107,10 +107,6 @@ Calls the user can make to the server:
 - "becomeobserver"
     - push wins and losses to backup server
     - view(removeplayer(oldgame, name))
-- "exitgame"
-    - push wins and losses to backup server
-    - If 
-    - view(removeplayer(oldgame, name))
 - "ping"
     - view(oldgame)
 

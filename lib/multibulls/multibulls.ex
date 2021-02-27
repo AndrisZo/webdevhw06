@@ -55,13 +55,14 @@ defmodule Multibulls.Game do
     }
   end
 
-  def view(state) do
+  def view(state, username) do
     %{
       guesses: state.guesses,
       winners: state.winners,
       playerswinloss: state.playerswinloss,
       playersready: state.playersready,
-      setup: state.setup
+      setup: state.setup,
+      username: username
     }
   end
 
