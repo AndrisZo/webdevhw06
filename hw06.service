@@ -3,16 +3,16 @@ Description=HW06 Multiplayer Bulls and Cows
 
 [Service]
 Type=simple
-User=practice
-Group=practice
+User=multibulls
+Group=multibulls
 Restart=on-failure
 Environment=MIX_ENV=prod
 Environment=PORT=4801
 Environment=PROD=true
 Environment=LANG=en_US.UTF-8
 
-WorkingDirectory=/WORKINGDIRECTORY
-ExecStart=/bin/bash /PATHTOSTART.SH
+WorkingDirectory=/home/multibulls/main
+ExecStart=/bin/bash /home/multibulls/main/start.sh
 
 [Install]
 WantedBy=multi-user.target

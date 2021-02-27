@@ -1,30 +1,25 @@
 #!/bin/bash
 
+export SECRET_KEY_BASE=W68eso5YQOlbtvSNUR50N/HDWj6IaEhAwMR3LtzuBEQAefwYVbX84bvoTA7XtiGi
 export MIX_ENV=prod
-# Common port range for this is 4000-10000
-# Valid port range for a user app to listen
-# on is something like 1025-32767
-export PORT=4801
-export SECRET_KEY_BASE=insecure
+export PORT=4780
+export NODEBIN=`pwd`/assets/node_modules/.bin
+export PATH="$PATH:$NODEBIN"
 
-mix deps.get --only prod
+echo "Building..."
+
+mix deps.get
 mix compile
-
-CFGD=$(readlink -f ~/.config/multibulls)
-
-if [ ! -d "$CFGD" ]; then
-    mkdir -p "$CFGD"
-fi
-
-if [ ! -e "$CFGD/base" ]; then
-    mix phx.gen.secret > "$CFGD/base"
-fi
-
-SECRET_KEY_BASE=$(cat "$CFGD/base")
-export SECRET_KEY_BASE
-
-npm install --prefix ./assets
-npm run deploy --prefix ./assets
+(cd assets && npm install)
+(cd assets && webpack --mode production)
 mix phx.digest
 
+echo "Generating release..."
 mix release
+
+#echo "Stopping old copy of app, if any..."
+#_build/prod/rel/practice/bin/practice stop || true
+
+echo "Starting app..."
+
+PROD=t ./start.sh
